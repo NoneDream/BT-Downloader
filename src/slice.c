@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "slice.h"
 #include "global.h"
+#include "bitmap.h"
 
 //这个函数初始化bitfield
 void piecefield_init(void)
