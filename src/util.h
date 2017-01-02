@@ -20,10 +20,10 @@
 void client_shutdown(int sig);
 
 //这个函数负责检查输入变量的格式，并解析之
-void handle_stdin(int argc,char **argv);
+void handle_stdin(int argc,char **argv,task_info_struct *task_info,host_info_struct *host_info);
 
 //这个函数用于初始化全局变量（包括文件检查）
-void init();
+void init(task_info_struct *task_info,host_info_struct *host_info);
 
 //这个函数用来把ip地址转换为字符串形式：格式为XXX.XXX.XXX.XXX, null终止
 //成功返回1，失败返回0

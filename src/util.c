@@ -21,8 +21,7 @@ void client_shutdown(int sig)
 }
 
 //这个函数负责检查输入变量的格式，并解析之
-void handle_stdin(int argc,char **argv)
-{
+void handle_stdin(int argc,char **argv,task_info_struct *task_info,host_info_struct *host_info){
     if(argc < 4){
         printf("Usage: SimpleTorrent <torrent file> <ip of this machine (XXX.XXX.XXX.XXX form)> <downloaded file location> [isseed]\n");
         printf("\t isseed is optional, 1 indicates this is a seed and won't contact other clients\n");
@@ -31,62 +30,54 @@ void handle_stdin(int argc,char **argv)
     }
     chdir(dirname(argv[0])); ///设置当前目录为应用程序所在的目录。其实，就只要加入这一句，就可以使用相对路径打开文件
 
-    int iseed = 0;
-    if( argc > 4 ) {
-        iseed = !!atoi(argv[4]);
-    }
-    if( iseed )
-    {
-        g_isseed=1;
-        printf("SimpleTorrent running as seed.\n");
-    }
-    else
-    {
-        g_isseed=0;
-    	printf("SimpleTorrent running as normal.\n");
-    }
+    if( argc > 4 )task_info->isseed = !!atoi(argv[4]);
 
-    strncpy(g_downlocation,argv[3],strlen(argv[3]));
-    if(g_downlocation[strlen(argv[3])] == '/'){
-        g_downlocation[strlen(argv[3])+1] = '\0';
+    if( task_info->iseed )printf("SimpleTorrent running as seed.\n");
+    else printf("SimpleTorrent running as normal.\n");
+
+    strncpy(task_info->downlocation,argv[3],strlen(argv[3]));
+    //保证下载路径字符串结尾是'/'，方便滞后的使用
+    if(task_info->downlocation[strlen(argv[3])] == '/'){
+        task_info->downlocation[strlen(argv[3])+1] = '\0';
     }
     else{
-        g_downlocation[strlen(argv[3])+1] = '/';
-        g_downlocation[strlen(argv[3])+2] = '\0';
+        task_info->downlocation[strlen(argv[3])+1] = '/';
+        task_info->downlocation[strlen(argv[3])+2] = '\0';
     }
-    strncpy(g_my_ip,argv[2],strlen(argv[2]));
-    g_my_ip[strlen(argv[2])+1] = '\0';
-    g_torrentdata = parsetorrentfile(argv[1]);
+
+    strncpy(host_info->my_ip,argv[2],strlen(argv[2]));
+    host_info->my_ip[strlen(argv[2])+1] = '\0';
 
     return;
 }
 
 //这个函数用于初始化全局变量（包括文件检查）
-void init()
+void init(task_info_struct *task_info,host_info_struct *host_info)
 {
     int i;
     announce_url_t *tracker_url;
     struct hostent *host;
     in_addr_t tracker_ip;
 
-    piece_num_to_save=(sem_t *)malloc(sizeof(sem_t));
-    packet_num_to_save=(sem_t *)malloc(sizeof(sem_t));
-    sem_init(piece_num_to_save,0,0);
-    sem_init(packet_num_to_save,0,0);
-    pkttosave_end=pkttosave_head;
-    piecetosave_end=piecetosave_head;
+    task_info->torrentdata = parsetorrentfile(argv[1]);
 
-    tracker_url=parse_announce_url(g_torrentdata->announce);
+    //piece_num_to_save=(sem_t *)malloc(sizeof(sem_t));
+    //packet_num_to_save=(sem_t *)malloc(sizeof(sem_t));
+    //sem_init(piece_num_to_save,0,0);
+    //sem_init(packet_num_to_save,0,0);
+
+    //获取traker的ip地址
+    tracker_url=parse_announce_url(task_info->torrentdata->announce);
     host=gethostbyname(tracker_url->hostname);
     if(host==NULL){
         printf("Fail to get tracker's IP!\n");
         exit(-222);
     }
     else {
-        memcpy(&tracker_ip,host->h_addr_list[0],sizeof(in_addr_t));
-        ip_to_string(tracker_ip,g_tracker_ip);
+        memcpy(task_info->tracker_ip,host->h_addr_list[0],sizeof(in_addr_t));
+        ip_to_string(tracker_ip,task_info->tracker_ip);
     }
-    g_tracker_port=tracker_url->port;
+    task_info->tracker_port=tracker_url->port;
     free(tracker_url->hostname);
     free(tracker_url);
 

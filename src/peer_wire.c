@@ -17,13 +17,6 @@
 #include "global.h"
 #include "util.h"
 
-/*
- * Get a slot from peer_pool
- * The default size of peer_pool are MAXPEERS
- * So ENSURE that the size of peer_pool are big than MAXPEERS
- * Different peer are identified by sockfd, this function try to find the slot which sockfd same as paramater, otherwhis it will create a new slot.
- * So you can use a invalid sock (-1) to get a new slot
- */
  //从peer_pool得到一个槽，默认peer_pool的大小是MAXPEERS，所以请保证实际peer_pool的大小大于MAXPEERS，不同的peer用socketfd来区分，若找不到sock制定的peer，则会新建一个
 peer_t* get_slot(int sock, peer_t **peer_pool)
 {

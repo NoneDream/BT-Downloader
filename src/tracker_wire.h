@@ -12,21 +12,21 @@ typedef struct _tracker_response {
 } tracker_response;
 
 // 由tracker返回的响应中peers键的内容
-typedef struct{
+typedef struct _peer_data{
   char id[21]; // 20用于null终止符
   int port;
   char* ip; // Null终止
-} peerdata;
+} peer_data;
 
 // 包含在tracker响应中的数据
-typedef struct{
+typedef struct _tracker_data{
   int interval;
   int numpeers;
   peerdata* peers;
 }tracker_data;
 
 //需要发送给tracker的数据
-typedef struct{
+typedef struct  _tracker_request{
   int info_hash[5];
   char peer_id[20];
   int port;

@@ -1,10 +1,10 @@
 #ifndef __BITMAP__
 #define __BITMAP__
 
-struct bitmap{
+typedef struct _bitmap{
     unsigned int len;
     int *bmap;
-};
+}bitmap;
 
 bitmap *bitmap_init(int len);
 

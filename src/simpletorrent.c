@@ -18,6 +18,8 @@
 
 //#define MAXLINE 4096
 // pthread数据
+host_info_struct host_info;
+task_info_struct task_info;
 
 int main(int argc, char **argv)
 {
@@ -66,7 +68,7 @@ int main(int argc, char **argv)
 
     printf("MESG: ");
     for(i=0; i<mlen; i++)
-    printf("%c",MESG[i]);
+        printf("%c",MESG[i]);
     printf("\n");
 
     ///创建套接字并发送报文给Tracker

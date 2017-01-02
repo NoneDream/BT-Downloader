@@ -29,7 +29,7 @@ typedef struct _peer_t {
   int choked;         // 作为下载者, 我们被远端peer阻塞
   int have_interest;  // 作为下载者, 对远端peer的分片有兴趣
   char peer_id[21];
-  uint8_t *bitField;  //Slice provided by another peer
+  bitmap bitField;  //Slice provided by another peer
   pthread_t thread_keepalive;
   //pthread_mutex_t mutex;
   time_t lastAlive;
@@ -37,8 +37,7 @@ typedef struct _peer_t {
 
 #pragma pack(1)
 
-typedef struct
-{
+typedef struct{
 	uint32_t len;
 	uint8_t msgID;
 	unsigned char *data;
