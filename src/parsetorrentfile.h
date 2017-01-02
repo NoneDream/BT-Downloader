@@ -17,13 +17,13 @@ typedef struct _announce_url_t{
 typedef struct _torrentmetadata_t{
   unsigned char info_hash[20]; // torrent的info_hash值(info键对应值的SHA1哈希值)
   char *announce; // tracker的URL
-  int length;     // 文件长度, 以字节为单位,多文件情况下为总长度
-  char *name;     // 文件名
+  int length;     // 文件总长度
+  //char *name;     // 文件名
   int piece_len;  // 每一个分片的字节数
   int num_pieces; // 分片数量
   char *pieces;   // 针对所有分片的20字节长的SHA1哈希值连接而成的字符串
-  int type;     //单文件还是多文件
-  file_info *files;     //多文件信息
+  int file_num;     //文件数目
+  file_info *files;     //文件信息
 } torrentmetadata_t;
 
 //这个函数解析.torrent文件中announce部分

@@ -28,7 +28,6 @@ void handle_stdin(int argc,char **argv,task_info_struct *task_info,host_info_str
         printf("\t default:0 indicates a downloading client and will connect to other clients and receive connections\n");
         exit(1);
     }
-    chdir(dirname(argv[0])); ///设置当前目录为应用程序所在的目录。其实，就只要加入这一句，就可以使用相对路径打开文件
 
     if( argc > 4 )task_info->isseed = !!atoi(argv[4]);
 
@@ -36,7 +35,7 @@ void handle_stdin(int argc,char **argv,task_info_struct *task_info,host_info_str
     else printf("SimpleTorrent running as normal.\n");
 
     strncpy(task_info->downlocation,argv[3],strlen(argv[3]));
-    //保证下载路径字符串结尾是'/'，方便滞后的使用
+    //保证下载路径字符串结尾是'/'，方便之后的使用
     if(task_info->downlocation[strlen(argv[3])] == '/'){
         task_info->downlocation[strlen(argv[3])+1] = '\0';
     }
@@ -48,6 +47,8 @@ void handle_stdin(int argc,char **argv,task_info_struct *task_info,host_info_str
     strncpy(host_info->my_ip,argv[2],strlen(argv[2]));
     host_info->my_ip[strlen(argv[2])+1] = '\0';
 
+    task_info->torrentdata = parsetorrentfile(argv[1]);
+
     return;
 }
 
@@ -57,9 +58,9 @@ void init(task_info_struct *task_info,host_info_struct *host_info)
     int i;
     announce_url_t *tracker_url;
     struct hostent *host;
-    in_addr_t tracker_ip;
+    //in_addr_t tracker_ip;
 
-    task_info->torrentdata = parsetorrentfile(argv[1]);
+    //task_info->torrentdata = parsetorrentfile(argv[1]);
 
     //piece_num_to_save=(sem_t *)malloc(sizeof(sem_t));
     //packet_num_to_save=(sem_t *)malloc(sizeof(sem_t));
@@ -73,22 +74,21 @@ void init(task_info_struct *task_info,host_info_struct *host_info)
         printf("Fail to get tracker's IP!\n");
         exit(-222);
     }
-    else {
-        memcpy(task_info->tracker_ip,host->h_addr_list[0],sizeof(in_addr_t));
-        ip_to_string(tracker_ip,task_info->tracker_ip);
-    }
-    task_info->tracker_port=tracker_url->port;
+    memcpy(task_info->tracker_addr.sin_addr,host->h_addr_list[0],sizeof(in_addr_t));
+    task_info->tracker_addr.sin_port = tracker_url->port;
+    task_info->tracker_addr.sin_family = AF_INET;
+
     free(tracker_url->hostname);
     free(tracker_url);
 
     //SHA1(g_torrentdata->, g_torrentdata->piece_len, g_infohash);
 
-    g_peerport=LISTENING_PORT;
-    g_done = 0;
-    g_uploaded=0;
-    g_downloaded=0;
-    g_left=g_torrentdata->length;
-    pthread_mutex_init(&g_peer_pool_mutex, NULL);
+    host_info->peerport = LISTENING_PORT;
+    //g_done = 0;
+    task_info->uploaded = 0;
+    task_info->downloaded = 0;
+    task_info->left = task_info->torrentdata->length;
+    pthread_mutex_init(&task_info->peer_list_mutex, NULL);
 
     ///生成peer_id
     int val[5];
@@ -96,13 +96,13 @@ void init(task_info_struct *task_info,host_info_struct *host_info)
     for(i=0; i<5; i++){
         val[i] = rand();
     }
-    memcpy(g_my_id,(char*)val,20);
-    g_my_id[20]=0;
+    memcpy(host_info->my_id,(char*)val,20);
+    host_info->my_id[20]=0;
 
-    ///初始化bitfield
-    piecefield_init();
+    ///初始化piecefield
+    task_info->piecefield = bitmap_init(task_info->torrentdata->num_pieces);
 
-    file_check();
+    file_check(task_info);
 
     return;
 }

@@ -12,24 +12,26 @@
 ///本机信息
 typedef struct _host_info_struct{
     int peerport; // 作为peer监听的端口号
-    char my_ip[128]; // 格式为XXX.XXX.XXX.XXX, null终止
+    char my_ip[20]; // 格式为XXX.XXX.XXX.XXX, null终止
     char my_id[21];//本机的peer_id
 }host_info_struct;
 
 ///任务信息
 typedef struct _task_info_struct{
-    torrentmetadata_t torrentdata;//torrent文件中的数据
+    struct sockaddr_in tracker_addr;//tracker的地址
+    bitmap *piecefield;
+    torrentmetadata_t *torrentdata;//torrent文件中的数据
     int isseed;//本机是种子还是下载者4
-    int tracker_port;//tracker的端口
-    int complete_num;//
-    int incomplete_num;//
+    int complete_num;//已完成分片数
+    int incomplete_num;//待完成分片数
     int uploaded;//已经上传的字节数
     int downloaded;//已经下载的字节数
     int left;//还需下载的字节数
+    ///int tracker_port;//tracker的端口
+    ///in_addr_t tracker_ip; // tracker的IP地址
     pthread_mutex_t peer_list_mutex;
     peer_t *peer_list[MAXPEERS];//peer信息
     char downlocation[128];//下载文件路径
-    char tracker_ip[16]; // tracker的IP地址, 格式为XXX.XXX.XXX.XXX(null终止)
 }task_info_struct;
 
 ///跨线程的信号量与工作队列

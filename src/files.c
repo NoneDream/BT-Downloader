@@ -7,10 +7,11 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include "files.h"
 #include "btdata.h"
 #include "global.h"
+#define __USE_GNU
+#include <errno.h>
 
 ///SHA1(const unsigned char *d, unsigned long n, unsigned char *md);
 ///参数d指向需要计算哈希值的数据, n是数据的长度(以字节为单位), md指向计算好的哈希值. 你需要为md分配空间, 并且它至少能
@@ -23,7 +24,7 @@
 //g_complete_num
 //g_incomplete_num
 //g_bitfield
-int file_check()//这个函数检查所有文件是否存在，若不存在则创建，初始化文件信息，并检查分片完成情况
+int file_check(task_info_struct *task_info)//这个函数检查所有文件是否存在，若不存在则创建，初始化文件信息，并检查分片完成情况
 {
 	int piece_n=0;
 	//int offset=0;
@@ -34,12 +35,32 @@ int file_check()//这个函数检查所有文件是否存在，若不存在则�
 	char *buf;
 	//unsigned char *md_2;
 
-	p=g_torrentdata->files;
+	///设置当前目录为下载目录。其实，就只要加入这一句，就可以使用相对路径打开文件
+	if(task_info->downlocation[0]=='/')chdir(task_info->downlocation);
+	else{
+        char cwd[128];
+        char *cwdd=getcwd(cwd,120);
+        char *dnloc=task_info->downlocation;
+        if(task_info->downlocation[0]=='.')
+            dnloc+=2;
+        if(cwdd == NULL){
+            printf("[Error][file_check]CWD is too long!");
+        }
+        cwdd=(char *)malloc(strlen(cwd)+strlen(dnloc)+2);
+        strcpy(cwdd,cwd);
+        strcpy(cwdd+strlen(cwd)+1,dnloc);
+        cwdd[strlen(cwd)]='/';
+        cwdd[strlen(cwd)+strlen(dnloc)+1]=0;
+        chdir(cwdd);
+	}
+
+
+	p = task_info->torrentdata->files;
 
     while(p->path!=NULL){
         if(access(p->path,F_OK)){
             ///建立不存在的文件
-            printf("File '%s' not exited, create it!\n",p->path);
+            printf("File '%s' doesn't exist, create it!\n",p->path);
             p->f=fopen(p->path,"w+");
             if(p->f==NULL){
                 perror("[Error][file_check]File creat failed!");

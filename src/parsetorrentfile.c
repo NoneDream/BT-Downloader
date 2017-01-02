@@ -146,9 +146,11 @@ torrentmetadata_t* parsetorrentfile(char* filename)
   }
   printf("\n");
 
+  int x,y,k,len_path,len_add;
+
   // 检查键并提取对应的信息
   int filled=0;
-  ret->type=TYPE_UNKNOWN;
+  ret->file_num=0;
   for(i=0; ben_res->val.d[i].val != NULL; i++)
   {
     int j;
@@ -164,7 +166,7 @@ torrentmetadata_t* parsetorrentfile(char* filename)
       be_dict* idict;
       if(ben_res->val.d[i].val->type != BE_DICT)
       {
-        perror("Expected 'info' to be a dict, but got something else");
+        perror("Expect 'info' to be a dict, but got something else");
         exit(-3);
       }
       idict = ben_res->val.d[i].val->val.d;
@@ -173,19 +175,22 @@ torrentmetadata_t* parsetorrentfile(char* filename)
       {
         if(!strncmp(idict[j].key,"length",strlen("length")))
         {
-          if(ret->type==TYPE_UNKNOWN)ret->type=TYPE_ONE_FILE;
-          else{
+          if(ret->file_num==0){
+            ret->file_num=1;
+            ret->files = malloc(sizeof(file_info));
+          }
+          else if(ret->file_num>1){
             printf("[Error][parsetorrentfile]Confusing:have both key 'length' and key 'files'.\n");
             exit(-22);
           }
           ret->length = idict[j].val->val.i;
+          ret->files[0].length = ret->length;
           filled++;
         }
         else if(!strncmp(idict[j].key,"files",strlen("files")))
         {
-            ret->length=0;
-          if(ret->type==TYPE_UNKNOWN)ret->type=TYPE_FILES;
-          else{
+          ret->length=0;
+          if(ret->file_num!=0){
             printf("[Error][parsetorrentfile]Confusing:have both key 'length' and key 'files'.\n");
             exit(-22);
           }
@@ -195,7 +200,7 @@ torrentmetadata_t* parsetorrentfile(char* filename)
           ret->files->length=0;
           be_node **file_list=idict[j].val->val.l;
           be_dict *file_dict;
-          int x,y,k,len_path,len_add;
+
           for(x=0;file_list[x]!=NULL;++x){
             file_dict=file_list[x]->val.d;
             for(y=0;file_dict[y].key!=NULL;++y){
@@ -234,9 +239,19 @@ torrentmetadata_t* parsetorrentfile(char* filename)
         }
         else if(!strncmp(idict[j].key,"name",strlen("name")))
         {
-          if(ret->type==TYPE_FILES)continue;
-          ret->name = (char*)malloc((1+strlen(idict[j].val->val.s))*sizeof(char));
-          strcpy(ret->name,idict[j].val->val.s);
+          if(ret->file_num==0){
+            ret->file_num=1;
+            ret->files = malloc(sizeof(file_info));
+          }
+          else if(ret->file_num>1){
+            printf("[Error][parsetorrentfile]Confusing:have both key 'length' and key 'files'.\n");
+            exit(-22);
+          }
+          ret->files[0].path = (char*)malloc(1+strlen(idict[j].val->val.s));
+          strcpy(ret->files[0].path,idict[j].val->val.s);
+          /*ret->files[0].path = (char*)malloc(1+strlen(idict[j].val->val.s)+strlen(downlocation));
+          strcpy(ret->files[0].path,downlocation);
+          strcpy(ret->files[0].path+strlen(downlocation),idict[j].val->val.s);*/
           filled++;
         }
         else if(!strncmp(idict[j].key,"piece length",strlen("piece length")))
@@ -257,16 +272,6 @@ torrentmetadata_t* parsetorrentfile(char* filename)
 
       } // for循环结束
     } // info键处理结束
-  }
-
-  ///对于单文件种子，也填充files键
-  if(ret->type==TYPE_ONE_FILE){
-    ret->files=malloc(2*sizeof(file_info));
-    ret->files[0].path=malloc(strlen(ret->name)+strlen(g_downlocation)+1);
-    strcpy(ret->files[0].path,g_downlocation);
-    strcpy(ret->files[0].path+strlen(g_downlocation),ret->name);
-    ret->files[0].length=ret->length;
-    ret->files[1].path=NULL;
   }
 
   // 确认已填充了必要的字段

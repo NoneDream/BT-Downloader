@@ -17,7 +17,7 @@ typedef struct _file_info{
 }file_info;
 
 //这个函数检查所有文件是否存在，若不存在则创建
-int file_check();
+int file_check(task_info_struct *task_info);
 
 //这个函数返回文件大小
 int file_size(char* filename);
